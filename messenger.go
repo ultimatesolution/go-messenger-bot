@@ -228,12 +228,18 @@ func (bot *BotAPI) SetWebhook(pattern string) (<-chan Callback, *http.ServeMux) 
 			}
 
 			if req.Header.Get("X-Hub-Signature") == "" || !verifySignature(bot.AppSecret, body, req.Header.Get("X-Hub-Signature")[5:]) {
+				log.Println("ERROR Failed to verify signature")
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 			var rsp Response
 			decoder := json.NewDecoder(req.Body)
-			decoder.Decode(&rsp)
+			err := decoder.Decode(&rsp)
+			if err != nil {
+				log.Println("ERROR decode:", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 
 			if rsp.Object == "page" {
 				for _, e := range rsp.Entries {
